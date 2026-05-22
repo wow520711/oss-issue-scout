@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oss-issue-scout"
+version = "0.2.0"
+description = "Find worthwhile open-source issues."
+readme = "README.en.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Yong-yuan-X" }
+]
+dependencies = []
+
+[project.scripts]
+oss-issue-scout = "oss_issue_scout.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["oss_issue_scout*"]

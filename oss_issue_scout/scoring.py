@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from github_api import Issue
+from .github_api import Issue
 
 
 @dataclass(frozen=True)

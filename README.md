@@ -1,9 +1,11 @@
 # oss-issue-scout
 
-Find worthwhile open-source issues  /  发现值得贡献的开源 issues
+发现值得贡献的开源 issues
 
-当前版本会调用 GitHub API 搜索 open issues，并根据项目活跃度、issue 活跃度、评论数量、标签等信号做一个简单评分。
-它主要面向初中级开发者，用来快速筛出更可能适合贡献的 issue。
+[English README](README.en.md)
+
+当前版本会调用 GitHub API 搜索 open issues，并根据项目活跃度、issue 活跃度、评论数量、标签等信号做一个简单评分
+它主要面向初中级开发者，用来快速筛出更可能适合贡献的 issue
 
 ## 功能
 
@@ -18,7 +20,8 @@ Find worthwhile open-source issues  /  发现值得贡献的开源 issues
 ## 使用
 
 ```powershell
-python cli.py search --language python --label "good first issue" --limit 5
+python -m pip install -e .
+oss-issue-scout search --language python --label "good first issue" --limit 5
 ```
 
 ## 参数
@@ -36,10 +39,10 @@ python cli.py search --language python --label "good first issue" --limit 5
 示例：
 
 ```powershell
-python cli.py search --language python
-python cli.py search --language python --label "help wanted" --stars-min 500 --limit 10
-python cli.py search --language python --format json
-python cli.py search --language "C++" --label "good first issue" --repo-updated-days 7
+oss-issue-scout search --language python
+oss-issue-scout search --language python --label "help wanted" --stars-min 500 --limit 10
+oss-issue-scout search --language python --format json
+oss-issue-scout search --language "C++" --label "good first issue" --repo-updated-days 7
 ```
 
 ## 推荐规则
@@ -66,15 +69,15 @@ python cli.py search --language "C++" --label "good first issue" --repo-updated-
 python -m unittest discover
 ```
 
-测试使用 mock 数据，不会请求真实 GitHub API。
+测试使用 mock 数据，不会请求真实 GitHub API
 
 ## 后续
 
-现在项目使用的人还比较少，如果你觉得它对你有帮助，欢迎点一个 ⭐。达到 16+ ⭐ 后会开启 Discussions。
+现在项目使用的人还比较少，如果你觉得它对你有帮助，欢迎点一个 ⭐。达到 16+ ⭐ 后会开启 Discussions
 
-如果有改进建议或使用问题，可以在 issues 中提出。
+如果有改进建议或使用问题，可以在 issues 中提出
 
-后续会逐步进行版本迭代，继续优化推荐质量和使用体验。
+后续会逐步进行版本迭代，继续优化推荐质量和使用体验
 
 ## 贡献者
 

@@ -3,8 +3,8 @@ import io
 import unittest
 from unittest.mock import patch
 
-from cli import main
-from github_api import GitHubAPIError, Issue
+from oss_issue_scout.cli import main
+from oss_issue_scout.github_api import GitHubAPIError, Issue
 
 
 class CliTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class CliTests(unittest.TestCase):
             has_open_pr=False,
         )
 
-        with patch("cli.search_issues", return_value=[issue]) as search, contextlib.redirect_stdout(stdout):
+        with patch("oss_issue_scout.cli.search_issues", return_value=[issue]) as search, contextlib.redirect_stdout(stdout):
             exit_code = main(
                 [
                     "search",
@@ -46,7 +46,7 @@ class CliTests(unittest.TestCase):
     def test_search_handles_github_api_errors(self) -> None:
         stderr = io.StringIO()
 
-        with patch("cli.search_issues", side_effect=GitHubAPIError("rate limited")), contextlib.redirect_stderr(stderr):
+        with patch("oss_issue_scout.cli.search_issues", side_effect=GitHubAPIError("rate limited")), contextlib.redirect_stderr(stderr):
             exit_code = main(["search", "--language", "python"])
 
         self.assertEqual(exit_code, 1)

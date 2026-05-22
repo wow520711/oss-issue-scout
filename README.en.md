@@ -18,7 +18,8 @@ It is currently aimed at junior to intermediate developers who want a faster way
 ## Usage
 
 ```powershell
-python cli.py search --language python --label "good first issue" --limit 5
+python -m pip install -e .
+oss-issue-scout search --language python --label "good first issue" --limit 5
 ```
 
 ## Options
@@ -36,10 +37,10 @@ python cli.py search --language python --label "good first issue" --limit 5
 Examples:
 
 ```powershell
-python cli.py search --language python
-python cli.py search --language python --label "help wanted" --stars-min 500 --limit 10
-python cli.py search --language python --format json
-python cli.py search --language "C++" --label "good first issue" --repo-updated-days 7
+oss-issue-scout search --language python
+oss-issue-scout search --language python --label "help wanted" --stars-min 500 --limit 10
+oss-issue-scout search --language python --format json
+oss-issue-scout search --language "C++" --label "good first issue" --repo-updated-days 7
 ```
 
 ## Scoring

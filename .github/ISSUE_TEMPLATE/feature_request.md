@@ -15,5 +15,5 @@ assignees: ""
 ## Example
 
 ```powershell
-python cli.py search
+oss-issue-scout search
 ```

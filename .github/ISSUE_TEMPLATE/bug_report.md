@@ -12,7 +12,7 @@ assignees: ""
 ## Command
 
 ```powershell
-python cli.py search
+oss-issue-scout search
 ```
 
 ## Expected behavior

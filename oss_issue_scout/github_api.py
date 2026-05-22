@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_API_VERSION = "2026-03-10"
 DEFAULT_STARS_MIN = 100
+MAX_SEARCH_PAGES = 5
 
 
 class GitHubAPIError(RuntimeError):
@@ -51,65 +52,76 @@ def search_issues(
         label=label,
         updated_days=updated_days,
     )
-    data = _request_json(
-        "/search/issues",
-        {
-            "q": query,
-            "sort": "updated",
-            "order": "desc",
-            "per_page": str(min(max(limit * 3, 10), 50)),
-        },
-    )
-
     repo_cache: dict[str, dict[str, Any]] = {}
     repo_activity_cache: dict[str, int] = {}
     repo_beginner_issue_count_cache: dict[str, int] = {}
     issues: list[Issue] = []
+    # Search candidates match the GitHub query first, then local filters below
+    # enforce repo metadata and repo activity rules.
+    per_page = min(max(limit * 10, 30), 100)
 
-    for item in data.get("items", []):
-        if "pull_request" in item:
-            continue
-
-        repo = _repo_full_name(item)
-        if repo is None:
-            continue
-
-        if repo not in repo_cache:
-            repo_cache[repo] = _repo_info_from_search_result(item) or _get_repo(repo)
-        repo_info = repo_cache[repo]
-        stars = int(repo_info.get("stargazers_count") or 0)
-        if stars < effective_stars_min:
-            continue
-
-        repo_language = str(repo_info.get("language") or "")
-        if language and repo_language.casefold() != language.casefold():
-            continue
-
-        if repo not in repo_activity_cache:
-            repo_activity_cache[repo] = _get_repo_last_issue_updated_days(repo)
-        if repo not in repo_beginner_issue_count_cache:
-            repo_beginner_issue_count_cache[repo] = _get_repo_beginner_issue_count(repo)
-        if (
-            repo_updated_days is not None
-            and repo_activity_cache[repo] > repo_updated_days
-        ):
-            continue
-
-        issue = Issue(
-            repo=repo,
-            title=str(item.get("title") or ""),
-            url=str(item.get("html_url") or ""),
-            language=repo_language,
-            stars=stars,
-            labels=_labels(item),
-            updated_days=_days_since(str(item.get("updated_at") or "")),
-            repo_last_issue_updated_days=repo_activity_cache[repo],
-            repo_beginner_issue_count=repo_beginner_issue_count_cache[repo],
-            comments=int(item.get("comments") or 0),
-            has_open_pr=False,
+    for page in range(1, MAX_SEARCH_PAGES + 1):
+        data = _request_json(
+            "/search/issues",
+            {
+                "q": query,
+                "sort": "updated",
+                "order": "desc",
+                "per_page": str(per_page),
+                "page": str(page),
+            },
         )
-        issues.append(issue)
-        if len(issues) >= limit:
+        items = data.get("items", [])
+        if not items:
+            break
+
+        for item in items:
+            if "pull_request" in item:
+                continue
+
+            repo = _repo_full_name(item)
+            if repo is None:
+                continue
+
+            if repo not in repo_cache:
+                repo_cache[repo] = _repo_info_from_search_result(item) or _get_repo(repo)
+            repo_info = repo_cache[repo]
+            stars = int(repo_info.get("stargazers_count") or 0)
+            if stars < effective_stars_min:
+                continue
+
+            repo_language = str(repo_info.get("language") or "")
+            if language and repo_language.casefold() != language.casefold():
+                continue
+
+            if repo not in repo_activity_cache:
+                repo_activity_cache[repo] = _get_repo_last_issue_updated_days(repo)
+            if repo not in repo_beginner_issue_count_cache:
+                repo_beginner_issue_count_cache[repo] = _get_repo_beginner_issue_count(repo)
+            if (
+                repo_updated_days is not None
+                and repo_activity_cache[repo] > repo_updated_days
+            ):
+                continue
+
+            issue = Issue(
+                repo=repo,
+                title=str(item.get("title") or ""),
+                url=str(item.get("html_url") or ""),
+                language=repo_language,
+                stars=stars,
+                labels=_labels(item),
+                updated_days=_days_since(str(item.get("updated_at") or "")),
+                repo_last_issue_updated_days=repo_activity_cache[repo],
+                repo_beginner_issue_count=repo_beginner_issue_count_cache[repo],
+                comments=int(item.get("comments") or 0),
+                has_open_pr=False,
+            )
+            issues.append(issue)
+            if len(issues) >= limit:
+                break
+
+        if len(issues) >= limit or len(items) < per_page:
             break
 
     return issues

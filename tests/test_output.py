@@ -1,9 +1,9 @@
 import json
 import unittest
 
-from github_api import Issue
-from output import render_json, render_markdown, render_table
-from scoring import score_issues
+from oss_issue_scout.github_api import Issue
+from oss_issue_scout.output import render_json, render_markdown, render_table
+from oss_issue_scout.scoring import score_issues
 
 
 class OutputTests(unittest.TestCase):

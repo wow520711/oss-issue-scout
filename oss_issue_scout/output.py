@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from scoring import ScoredIssue
+from .scoring import ScoredIssue
 
 
 def render_results(results: list[ScoredIssue], output_format: str) -> str:

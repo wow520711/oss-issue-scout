@@ -3,9 +3,9 @@ from __future__ import annotations
 import argparse
 import sys
 
-from github_api import GitHubAPIError, search_issues
-from output import render_results
-from scoring import score_issues
+from .github_api import GitHubAPIError, search_issues
+from .output import render_results
+from .scoring import score_issues
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -1,7 +1,7 @@
 import unittest
 
-from github_api import Issue
-from scoring import score_issue, score_issues
+from oss_issue_scout.github_api import Issue
+from oss_issue_scout.scoring import score_issue, score_issues
 
 
 class ScoringTests(unittest.TestCase):
