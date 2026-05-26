@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>oss-issue-scout — 发现值得贡献的开源 Issue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-card: #1c2129;
+    --bg-terminal: #0b0f14;
+    --border: #30363d;
+    --border-hover: #484f58;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent: #f59e0b;
+    --accent-dim: rgba(245, 158, 11, 0.12);
+    --green: #22c55e;
+    --green-dim: rgba(34, 197, 94, 0.12);
+    --red: #ef4444;
+    --red-dim: rgba(239, 68, 68, 0.12);
+    --radius: 8px;
+    --font-display: "DM Serif Display", Georgia, serif;
+    --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- language switcher ---------- */
+  .language-switcher {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    gap: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .lang-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .lang-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .lang-btn.active {
+    background: var(--accent);
+    color: #0d1117;
+  }
+
+  /* ---------- reveal animation ---------- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ---------- container ---------- */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    padding: 80px 24px;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(34,197,94,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 32px;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-badge-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 6vw, 4.2rem);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 520px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+  }
+  .btn-primary:hover { background: #fbbf24; transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--border-hover); background: rgba(255,255,255,0.03); }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    animation: float 2.5s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(6px); }
+  }
+
+  .hero-scroll-arrow {
+    width: 20px;
+    height: 20px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: rotate(45deg);
+    opacity: 0.5;
+  }
+
+  /* ---------- section ---------- */
+  section {
+    padding: 80px 0;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .section-desc {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    max-width: 560px;
+    margin-bottom: 40px;
+    line-height: 1.7;
+  }
+
+  /* ---------- features ---------- */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .feature-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+  }
+
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 1.2rem;
+  }
+  .feature-icon.amber { background: var(--accent-dim); color: var(--accent); }
+  .feature-icon.green { background: var(--green-dim); color: var(--green); }
+
+  .feature-card h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .feature-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ---------- demo ---------- */
+  .demo {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .demo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-terminal);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .demo-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .demo-dot.red { background: #ff5f57; }
+  .demo-dot.yellow { background: #febc2e; }
+  .demo-dot.green { background: #28c840; }
+
+  .demo-title {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .demo-body {
+    padding: 20px;
+    overflow-x: auto;
+  }
+
+  .demo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+
+  .demo-table th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .demo-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    vertical-align: top;
+  }
+
+  .demo-table tr:last-child td { border-bottom: none; }
+  .demo-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+  .score-high { background: var(--green-dim); color: var(--green); }
+  .score-mid { background: var(--accent-dim); color: var(--accent); }
+
+  .repo-link, .issue-link {
+    color: #58a6ff;
+    text-decoration: none;
+  }
+  .repo-link:hover, .issue-link:hover { text-decoration: underline; }
+
+  .label-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .label-tag.green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .label-tag.blue { background: rgba(88,166,255,0.15); color: #58a6ff; }
+  .label-tag.purple { background: rgba(168,130,255,0.15); color: #a882ff; }
+  .label-tag.red { background: rgba(248,113,113,0.15); color: #f87171; }
+
+  /* ---------- scoring ---------- */
+  .scoring-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .scoring-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .scoring-card.pros { background: rgba(34,197,94,0.03); }
+  .scoring-card.cons { background: rgba(239,68,68,0.03); }
+
+  .scoring-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .scoring-card.pros h3 { color: var(--green); }
+  .scoring-card.cons h3 { color: var(--red); }
+
+  .scoring-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .scoring-points {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 44px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .scoring-points.positive { background: var(--green-dim); color: var(--green); }
+  .scoring-points.negative { background: var(--red-dim); color: var(--red); }
+
+  /* ---------- usage ---------- */
+  .usage-block {
+    background: var(--bg-terminal);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .usage-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .usage-header-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border-hover);
+  }
+
+  .usage-header span {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .usage-body {
+    padding: 20px;
+  }
+
+  .usage-body pre {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.8;
+    overflow-x: auto;
+    color: var(--text-primary);
+  }
+
+  .usage-body .cmd-prompt { color: var(--green); user-select: none; }
+  .usage-body .cmd-flag { color: #58a6ff; }
+  .usage-body .cmd-value { color: var(--accent); }
+  .usage-body .cmd-comment { color: var(--text-muted); }
+
+  /* ---------- footer ---------- */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    text-align: center;
+  }
+
+  .footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease;
+  }
+  .footer a:hover { color: var(--text-primary); }
+
+  .footer-divider {
+    width: 1px;
+    height: 14px;
+    background: var(--border);
+  }
+
+  /* ---------- search bar ---------- */
+  .search-bar-section {
+    background: var(--bg-primary);
+    padding: 32px 0;
+  }
+
+  .search-bar-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .search-box-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+  }
+
+  .search-box-wrapper:focus-within {
+    border-color: var(--accent);
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .search-box-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .search-submit {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+
+  .search-submit:hover { 
+    background: var(--accent); 
+    border-color: var(--accent);
+    color: #0d1117;
+  }
+
+  .search-submit svg { width: 14px; height: 14px; }
+
+  .search-submit.loading svg {
+    animation: spin 1s linear infinite;
+  }
+
+  .search-settings {
+    margin-top: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .settings-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .settings-header:hover { background: var(--bg-card); }
+
+  .settings-icon {
+    width: 12px;
+    height: 12px;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+  }
+
+  .settings-icon.expanded { transform: rotate(180deg); }
+
+  .settings-content {
+    padding: 12px;
+    background: var(--bg-secondary);
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 768px) {
+    .settings-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 480px) {
+    .settings-grid { grid-template-columns: 1fr; }
+  }
+
+  .setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .setting-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .setting-input {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .setting-input:focus { border-color: var(--accent); }
+
+  .setting-input::placeholder { color: var(--text-muted); }
+
+  .setting-select {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color 0.2s ease;
+    cursor: pointer;
+  }
+
+  .setting-select:focus { border-color: var(--accent); }
+
+  .token-input-wrapper {
+    position: relative;
+    grid-column: 1 / -1;
+  }
+
+  .token-toggle {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+  }
+
+  .token-toggle:hover { color: var(--text-secondary); }
+
+  .token-toggle svg { width: 12px; height: 12px; }
+
+  .search-results-wrapper {
+    background: var(--bg-primary);
+    padding-bottom: 32px;
+  }
+
+  .search-results-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .results-count {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 16px;
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .loading-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .loading-dots {
+    display: flex;
+    gap: 3px;
+  }
+
+  .loading-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.4s ease-in-out infinite both;
+  }
+
+  .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+  .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+  .loading-dot:nth-child(3) { animation-delay: 0s; }
+
+  @keyframes spin { 
+    to { transform: rotate(360deg); } 
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+  }
+
+  .results-error {
+    background: var(--red-dim);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: var(--radius);
+    padding: 12px;
+    color: var(--red);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .results-empty {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-muted);
+  }
+
+  .results-empty svg {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+  }
+
+  .reasons-badge {
+    display: inline-block;
+    padding: 2px 5px;
+    background: var(--green-dim);
+    color: var(--green);
+    border-radius: 3px;
+    font-size: 0.55rem;
+    margin-right: 3px;
+    margin-bottom: 3px;
+  }
+
+  .warnings-badge {
+    display: inline-block;
+    padding: 2px 5px;
+    background: var(--red-dim);
+    color: var(--red);
+    border-radius: 3px;
+    font-size: 0.55rem;
+    margin-right: 3px;
+    margin-bottom: 3px;
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 768px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .scoring-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: clamp(2rem, 8vw, 2.6rem); }
+    .hero-subtitle { font-size: 1rem; }
+    .demo-body { padding: 12px; }
+    .demo-table { font-size: 0.7rem; }
+    .demo-table th, .demo-table td { padding: 8px 6px; }
+    .search-box { flex-wrap: wrap; }
+    .search-submit { width: 100%; justify-content: center; }
+  }
+
+  @media (max-width: 480px) {
+    .hero-actions { flex-direction: column; align-items: center; }
+    .btn { width: 100%; justify-content: center; }
+    section { padding: 56px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="language-switcher">
+  <button class="lang-btn active" id="lang-zh">中文</button>
+  <button class="lang-btn" id="lang-en">English</button>
+</div>
+
+<!-- ========== Hero ========== -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge reveal">
+      <span class="hero-badge-dot"></span>
+      v0.3.0 · Open Source
+    </div>
+    <h1 class="reveal" style="transition-delay: 0.1s" data-i18n="hero-title">
+      发现值得贡献的<br><em>开源 Issue</em>
+    </h1>
+    <p class="hero-subtitle reveal" style="transition-delay: 0.2s" data-i18n="hero-subtitle">
+      面向初中级开发者的开源贡献入口。搜索、过滤、评分 ——
+      帮你从海量 GitHub Issue 中快速找到适合上手的任务。
+    </p>
+    <div class="hero-actions reveal" style="transition-delay: 0.3s">
+      <a href="#usage" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        <span data-i18n="hero-action-start">快速开始</span>
+      </a>
+      <a href="https://github.com/Yong-yuan-X/oss-issue-scout" class="btn btn-outline" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span data-i18n="hero-action-github">GitHub</span>
+      </a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <span>SCROLL</span>
+    <div class="hero-scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ========== Features ========== -->
+<section id="features">
+  <div class="container">
+    <p class="section-label reveal">Features</p>
+    <h2 class="section-title reveal" style="transition-delay: 0.05s" data-i18n="features-title">核心能力</h2>
+    <p class="section-desc reveal" style="transition-delay: 0.1s" data-i18n="features-desc">无需任何第三方依赖，一条命令即可搜索 GitHub 上的优质新手 Issue。</p>
+
+    <div class="features-grid">
+      <div class="feature-card reveal" style="transition-delay: 0.15s">
+        <div class="feature-icon amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <h3 data-i18n="features-search">智能搜索</h3>
+        <p data-i18n="features-search-desc">按语言、标签、Stars 和更新时间等维度精准筛选 GitHub Issue，告别盲目浏览。</p>
+      </div>
+
+      <div class="feature-card reveal" style="transition-delay: 0.2s">
+        <div class="feature-icon green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h3 data-i18n="features-filter">自动过滤</h3>
+        <p data-i18n="features-filter-desc">自动排除已关闭、已指派、已关联 PR 和 Archived 仓库的 Issue，只保留真正可参与的任务。</p>
+      </div>
+
+      <div class="feature-card reveal" style="transition-delay: 0.25s">
+        <div class="feature-icon amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h3 data-i18n="features-score">智能评分</h3>
+        <p data-i18n="features-score-desc">综合考虑项目活跃度、Issue 新鲜度、评论区讨论量和新手友好标签，给出贡献推荐分数。</p>
+      </div>
+
+      <div class="feature-card reveal" style="transition-delay: 0.3s">
+        <div class="feature-icon green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        </div>
+        <h3 data-i18n="features-output">多格式输出</h3>
+        <p data-i18n="features-output-desc">支持 Table、Markdown 和 JSON 三种输出格式，方便集成到笔记、文档或自动化流程中。</p>
+      </div>
+
+      <div class="feature-card reveal" style="transition-delay: 0.35s">
+        <div class="feature-icon amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <h3 data-i18n="features-zero">零依赖</h3>
+        <p data-i18n="features-zero-desc">基于 Python 标准库构建，无需安装任何第三方包，拿到即可运行。</p>
+      </div>
+
+      <div class="feature-card reveal" style="transition-delay: 0.4s">
+        <div class="feature-icon green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 data-i18n="features-preset">开发者预设</h3>
+        <p data-i18n="features-preset-desc">提供 junior、intermediate、senior 三种预设模式，满足不同经验开发者的需求。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Search Bar ========== -->
+<section class="search-bar-section">
+  <div class="search-bar-container">
+    <div class="search-box-wrapper">
+      <div class="search-box">
+        <svg class="search-box-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input 
+          type="text" 
+          id="search-query" 
+          class="search-input" 
+          placeholder="搜索 GitHub Issues... 例如: python good first issue"
+          data-i18n-placeholder="search-placeholder"
+        />
+        <button id="search-submit" class="search-submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
+          <span data-i18n="search-button">搜索</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="search-settings">
+      <div class="settings-header" id="settings-toggle">
+        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        <span style="color: var(--text-secondary); font-size: 0.8rem;" data-i18n="search-settings">搜索设置</span>
+      </div>
+      <div class="settings-content" id="settings-content" style="display: none;">
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="search-language">编程语言</label>
+            <input type="text" id="search-language" class="setting-input" placeholder="python, rust, javascript...">
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="search-label">标签</label>
+            <input type="text" id="search-label" class="setting-input" placeholder="good first issue, bug...">
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="search-stars">最低 Stars</label>
+            <input type="number" id="search-stars-min" class="setting-input" placeholder="100" value="100">
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="search-limit">返回数量</label>
+            <input type="number" id="search-limit" class="setting-input" placeholder="5" value="5">
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="search-preset">开发者预设</label>
+            <select id="search-preset" class="setting-select">
+              <option value="default">default</option>
+              <option value="junior">junior</option>
+              <option value="intermediate">intermediate</option>
+              <option value="senior">senior</option>
+            </select>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="search-days">更新天数</label>
+            <input type="number" id="search-updated-days" class="setting-input" placeholder="不限制">
+          </div>
+          <div class="setting-group token-input-wrapper">
+            <label class="setting-label" data-i18n="search-token">GitHub Token (可选)</label>
+            <div style="position: relative;">
+              <input type="password" id="search-token" class="setting-input" placeholder="github_pat_...">
+              <button id="token-toggle" class="token-toggle" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Search Results ========== -->
+<section class="search-results-wrapper" id="search-results-wrapper" style="display: none;">
+  <div class="search-results-container">
+    <div class="results-header">
+      <span class="results-count" id="results-count">找到 5 个结果</span>
+    </div>
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-dot red"></span>
+        <span class="demo-dot yellow"></span>
+        <span class="demo-dot green"></span>
+        <span class="demo-title">oss-issue-scout ~ search</span>
+      </div>
+      <div class="demo-body">
+        <table class="demo-table" id="search-results-table">
+          <thead>
+            <tr>
+              <th>Score</th>
+              <th>Repo</th>
+              <th>Title</th>
+              <th>Labels</th>
+              <th>Stars</th>
+              <th>Reasons</th>
+            </tr>
+          </thead>
+          <tbody id="search-results-body">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Demo ========== -->
+<section id="demo">
+  <div class="container">
+    <p class="section-label reveal">Demo</p>
+    <h2 class="section-title reveal" style="transition-delay: 0.05s">示例输出</h2>
+    <p class="section-desc reveal" style="transition-delay: 0.1s">以下是运行 <code style="font-family:var(--font-mono);font-size:0.85rem;color:var(--accent);background:var(--accent-dim);padding:1px 6px;border-radius:3px;">oss-issue-scout search --language python --label "good first issue"</code> 的模拟结果。</p>
+
+    <div class="demo reveal" style="transition-delay: 0.15s">
+      <div class="demo-header">
+        <span class="demo-dot red"></span>
+        <span class="demo-dot yellow"></span>
+        <span class="demo-dot green"></span>
+        <span class="demo-title">oss-issue-scout ~ search</span>
+      </div>
+      <div class="demo-body">
+        <table class="demo-table">
+          <thead>
+            <tr>
+              <th>Score</th>
+              <th>Repo</th>
+              <th>Title</th>
+              <th>Labels</th>
+              <th>Stars</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="score-badge score-high">95</span></td>
+              <td><a class="repo-link" href="https://github.com/psf/requests" target="_blank" rel="noopener">psf/requests</a></td>
+              <td><a class="issue-link" href="#" target="_blank">Improve timeout error messages for connection pooling</a></td>
+              <td>
+                <span class="label-tag green">good first issue</span>
+                <span class="label-tag blue">documentation</span>
+              </td>
+              <td style="color:var(--text-muted)">&#9733; 52.4k</td>
+            </tr>
+            <tr>
+              <td><span class="score-badge score-high">88</span></td>
+              <td><a class="repo-link" href="https://github.com/pallets/flask" target="_blank" rel="noopener">pallets/flask</a></td>
+              <td><a class="issue-link" href="#" target="_blank">Add type annotations to flask.cli module</a></td>
+              <td>
+                <span class="label-tag green">good first issue</span>
+                <span class="label-tag purple">enhancement</span>
+              </td>
+              <td style="color:var(--text-muted)">&#9733; 67.8k</td>
+            </tr>
+            <tr>
+              <td><span class="score-badge score-mid">76</span></td>
+              <td><a class="repo-link" href="https://github.com/fastapi/fastapi" target="_blank" rel="noopener">fastapi/fastapi</a></td>
+              <td><a class="issue-link" href="#" target="_blank">Refactor test client to use httpx directly</a></td>
+              <td>
+                <span class="label-tag green">good first issue</span>
+              </td>
+              <td style="color:var(--text-muted)">&#9733; 78.1k</td>
+            </tr>
+            <tr>
+              <td><span class="score-badge score-mid">72</span></td>
+              <td><a class="repo-link" href="https://github.com/tiangolo/sqlmodel" target="_blank" rel="noopener">tiangolo/sqlmodel</a></td>
+              <td><a class="issue-link" href="#" target="_blank">Support composite primary keys for relationship()</a></td>
+              <td>
+                <span class="label-tag green">good first issue</span>
+                <span class="label-tag blue">help wanted</span>
+              </td>
+              <td style="color:var(--text-muted)">&#9733; 13.5k</td>
+            </tr>
+            <tr>
+              <td><span class="score-badge score-mid">68</span></td>
+              <td><a class="repo-link" href="https://github.com/numpy/numpy" target="_blank" rel="noopener">numpy/numpy</a></td>
+              <td><a class="issue-link" href="#" target="_blank">Add examples to numpy.einsum docstring</a></td>
+              <td>
+                <span class="label-tag green">good first issue</span>
+              </td>
+              <td style="color:var(--text-muted)">&#9733; 28.6k</td>
+            </tr>
+            <tr>
+              <td><span class="score-badge score-mid">63</span></td>
+              <td><a class="repo-link" href="https://github.com/pydantic/pydantic" target="_blank" rel="noopener">pydantic/pydantic</a></td>
+              <td><a class="issue-link" href="#" target="_blank">Standardize error message format across validators</a></td>
+              <td>
+                <span class="label-tag purple">enhancement</span>
+              </td>
+              <td style="color:var(--text-muted)">&#9733; 21.3k</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Scoring ========== -->
+<section id="scoring">
+  <div class="container">
+    <p class="section-label reveal">Scoring</p>
+    <h2 class="section-title reveal" style="transition-delay: 0.05s" data-i18n="scoring-title">评分规则</h2>
+    <p class="section-desc reveal" style="transition-delay: 0.1s" data-i18n="scoring-desc">每个 Issue 从基础分 50 开始，根据项目活跃度、Issue 新鲜度等多个维度进行评分。支持 default、junior、intermediate、senior 四种预设模式。</p>
+
+    <div class="scoring-grid">
+      <div class="scoring-card pros reveal" style="transition-delay: 0.15s">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span data-i18n="scoring-bonus">加分因素</span>
+        </h3>
+        <div class="scoring-item">
+          <span class="scoring-points positive">+30</span>
+          <span data-i18n="scoring-bonus-1">仓库近 3 天内有 Issue 活动</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points positive">+15</span>
+          <span data-i18n="scoring-bonus-2">Issue 今日更新 / 仓库本周有活动</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points positive">+15</span>
+          <span data-i18n="scoring-bonus-3">评论数 ≤ 1，讨论量低，容易介入</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points positive">+10~15</span>
+          <span data-i18n="scoring-bonus-4">仓库 Stars 在 5k~50k 活跃范围</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points positive">+10</span>
+          <span data-i18n="scoring-bonus-5">带有 good first issue / help wanted 标签</span>
+        </div>
+      </div>
+
+      <div class="scoring-card cons reveal" style="transition-delay: 0.2s">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <span data-i18n="scoring-penalty">减分因素</span>
+        </h3>
+        <div class="scoring-item">
+          <span class="scoring-points negative">-40</span>
+          <span data-i18n="scoring-penalty-1">仓库超过 30 天无 Issue 活动</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points negative">-30</span>
+          <span data-i18n="scoring-penalty-2">仓库 Issue 活动在 2~4 周前停滞</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points negative">-20</span>
+          <span data-i18n="scoring-penalty-3">Issue 超过 30 天未更新</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points negative">-15</span>
+          <span data-i18n="scoring-penalty-4">评论数 ≥ 5，讨论链过长</span>
+        </div>
+        <div class="scoring-item">
+          <span class="scoring-points negative">-10~15</span>
+          <span data-i18n="scoring-penalty-5">仓库 Stars > 50k，竞争激烈</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="features-grid" style="margin-top: 40px;">
+      <div class="feature-card reveal" style="transition-delay: 0.25s">
+        <div class="feature-icon amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 data-i18n="scoring-junior">junior</h3>
+        <p data-i18n="scoring-junior-desc">新手友好预设，偏好小仓库、低讨论量、带有 good first issue 标签的任务。</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay: 0.3s">
+        <div class="feature-icon green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 data-i18n="scoring-intermediate">intermediate</h3>
+        <p data-i18n="scoring-intermediate-desc">中级开发者预设，适合有一定经验的贡献者，关注 bug 和 enhancement 类型任务。</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay: 0.35s">
+        <div class="feature-icon amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 data-i18n="scoring-senior">senior</h3>
+        <p data-i18n="scoring-senior-desc">资深开发者预设，偏好大型项目和复杂任务，对活跃度要求较低。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Usage ========== -->
+<section id="usage">
+  <div class="container">
+    <p class="section-label reveal">Quick Start</p>
+    <h2 class="section-title reveal" style="transition-delay: 0.05s" data-i18n="usage-title">使用指南</h2>
+    <p class="section-desc reveal" style="transition-delay: 0.1s" data-i18n="usage-desc">Python 3.10+ 即可运行，无需安装任何第三方依赖。设置 GitHub Token 可获得更高 API 速率（5000 次/小时）。</p>
+
+    <div class="usage-block reveal" style="transition-delay: 0.15s">
+      <div class="usage-header">
+        <span class="usage-header-dot"></span>
+        <span class="usage-header-dot"></span>
+        <span class="usage-header-dot"></span>
+        <span>PowerShell / Terminal</span>
+      </div>
+      <div class="usage-body">
+
+<pre><span class="cmd-comment" data-i18n="usage-comment-1"># 基本搜索：查找 Python 语言的新手友好 Issue</span>
+<span class="cmd-prompt">$</span> oss-issue-scout search <span class="cmd-flag">--language</span> <span class="cmd-value">python</span>
+
+<span class="cmd-comment" data-i18n="usage-comment-2"># 按标签过滤，限制返回数量</span>
+<span class="cmd-prompt">$</span> oss-issue-scout search <span class="cmd-flag">--language</span> <span class="cmd-value">python</span> <span class="cmd-flag">--label</span> <span class="cmd-value">"good first issue"</span> <span class="cmd-flag">--limit</span> <span class="cmd-value">5</span>
+
+<span class="cmd-comment" data-i18n="usage-comment-3"># 使用预设搜索：junior / intermediate / senior / default</span>
+<span class="cmd-prompt">$</span> oss-issue-scout search <span class="cmd-flag">--language</span> <span class="cmd-value">python</span> <span class="cmd-flag">--preset</span> <span class="cmd-value">junior</span>
+
+<span class="cmd-comment" data-i18n="usage-comment-4"># 高门槛过滤：Stars 500+、近 7 天有活动的仓库</span>
+<span class="cmd-prompt">$</span> oss-issue-scout search <span class="cmd-flag">--language</span> <span class="cmd-value">python</span> <span class="cmd-flag">--label</span> <span class="cmd-value">"help wanted"</span> <span class="cmd-flag">--stars-min</span> <span class="cmd-value">500</span> <span class="cmd-flag">--repo-updated-days</span> <span class="cmd-value">7</span>
+
+<span class="cmd-comment" data-i18n="usage-comment-5"># JSON 格式输出，方便程序化处理</span>
+<span class="cmd-prompt">$</span> oss-issue-scout search <span class="cmd-flag">--language</span> <span class="cmd-value">python</span> <span class="cmd-flag">--format</span> <span class="cmd-value">json</span>
+
+<span class="cmd-comment" data-i18n="usage-comment-6"># 设置 Token 提升速率限制（Windows PowerShell）</span>
+<span class="cmd-prompt">$</span> <span style="color:#c084fc">$env:GITHUB_TOKEN</span>=<span class="cmd-value">"your_token_here"</span>
+<span class="cmd-prompt">$</span> oss-issue-scout search <span class="cmd-flag">--language</span> <span class="cmd-value">rust</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Footer ========== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <a href="https://github.com/Yong-yuan-X/oss-issue-scout" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <span class="footer-divider"></span>
+      <span>Built with Python stdlib</span>
+      <span class="footer-divider"></span>
+      <span>MIT License</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+
+  document.querySelectorAll(".reveal").forEach(function(el) {
+    observer.observe(el);
+  });
+})();
+
+let currentLang = 'zh';
+
+const translations = {
+  zh: {
+    'hero-title': '发现值得贡献的<br><em>开源 Issue</em>',
+    'hero-subtitle': '面向初中级开发者的开源贡献入口。搜索、过滤、评分 —— 帮你从海量 GitHub Issue 中快速找到适合上手的任务。',
+    'hero-action-start': '快速开始',
+    'hero-action-github': 'GitHub',
+    'features-title': '核心能力',
+    'features-desc': '无需任何第三方依赖，一条命令即可搜索 GitHub 上的优质新手 Issue。',
+    'features-search': '智能搜索',
+    'features-search-desc': '按语言、标签、Stars 和更新时间等维度精准筛选 GitHub Issue，告别盲目浏览。',
+    'features-filter': '自动过滤',
+    'features-filter-desc': '自动排除已关闭、已指派、已关联 PR 和 Archived 仓库的 Issue，只保留真正可参与的任务。',
+    'features-score': '智能评分',
+    'features-score-desc': '综合考虑项目活跃度、Issue 新鲜度、评论区讨论量和新手友好标签，给出贡献推荐分数。',
+    'features-output': '多格式输出',
+    'features-output-desc': '支持 Table、Markdown 和 JSON 三种输出格式，方便集成到笔记、文档或自动化流程中。',
+    'features-zero': '零依赖',
+    'features-zero-desc': '基于 Python 标准库构建，无需安装任何第三方包，拿到即可运行。',
+    'features-preset': '开发者预设',
+    'features-preset-desc': '提供 junior、intermediate、senior 三种预设模式，满足不同经验开发者的需求。',
+    'demo-title': '示例输出',
+    'demo-desc': '以下是运行',
+    'scoring-title': '评分规则',
+    'scoring-desc': '每个 Issue 从基础分 50 开始，根据项目活跃度、Issue 新鲜度等多个维度进行评分。支持 default、junior、intermediate、senior 四种预设模式。',
+    'scoring-bonus': '加分因素',
+    'scoring-penalty': '减分因素',
+    'scoring-bonus-1': '仓库近 3 天内有 Issue 活动',
+    'scoring-bonus-2': 'Issue 今日更新 / 仓库本周有活动',
+    'scoring-bonus-3': '评论数 ≤ 1，讨论量低，容易介入',
+    'scoring-bonus-4': '仓库 Stars 在 5k~50k 活跃范围',
+    'scoring-bonus-5': '带有 good first issue / help wanted 标签',
+    'scoring-penalty-1': '仓库超过 30 天无 Issue 活动',
+    'scoring-penalty-2': '仓库 Issue 活动在 2~4 周前停滞',
+    'scoring-penalty-3': 'Issue 超过 30 天未更新',
+    'scoring-penalty-4': '评论数 ≥ 5，讨论链过长',
+    'scoring-penalty-5': '仓库 Stars > 50k，竞争激烈',
+    'scoring-junior': 'junior',
+    'scoring-junior-desc': '新手友好预设，偏好小仓库、低讨论量、带有 good first issue 标签的任务。',
+    'scoring-intermediate': 'intermediate',
+    'scoring-intermediate-desc': '中级开发者预设，适合有一定经验的贡献者，关注 bug 和 enhancement 类型任务。',
+    'scoring-senior': 'senior',
+    'scoring-senior-desc': '资深开发者预设，偏好大型项目和复杂任务，对活跃度要求较低。',
+    'usage-title': '使用指南',
+    'usage-desc': 'Python 3.10+ 即可运行，无需安装任何第三方依赖。设置 GitHub Token 可获得更高 API 速率（5000 次/小时）。',
+    'usage-comment-1': '# 基本搜索：查找 Python 语言的新手友好 Issue',
+    'usage-comment-2': '# 按标签过滤，限制返回数量',
+    'usage-comment-3': '# 使用预设搜索：junior / intermediate / senior / default',
+    'usage-comment-4': '# 高门槛过滤：Stars 500+、近 7 天有活动的仓库',
+    'usage-comment-5': '# JSON 格式输出，方便程序化处理',
+    'usage-comment-6': '# 设置 Token 提升速率限制 (Windows PowerShell)',
+    'search-placeholder': '搜索 GitHub Issues... 例如: python good first issue',
+    'search-settings': '搜索设置',
+    'search-language': '编程语言',
+    'search-label': '标签',
+    'search-stars': '最低 Stars',
+    'search-limit': '返回数量',
+    'search-preset': '开发者预设',
+    'search-days': '更新天数',
+    'search-token': 'GitHub Token（可选）',
+    'search-button': '搜索',
+    'results-count': '找到 {count} 个结果',
+    'loading-text': '正在搜索 GitHub Issues',
+    'error-connect': '无法连接到服务器，请确保后端服务已启动',
+    'footer-text': 'Made with ❤️ for open source contributors'
+  },
+  en: {
+    'hero-title': 'Discover Open Source<br><em>Issues Worth Contributing</em>',
+    'hero-subtitle': 'A gateway to open source contribution for junior and intermediate developers. Search, filter, and score — quickly find tasks that match your skill level.',
+    'hero-action-start': 'Get Started',
+    'hero-action-github': 'GitHub',
+    'features-title': 'Core Features',
+    'features-desc': 'No third-party dependencies required. Search for quality beginner-friendly GitHub Issues with a single command.',
+    'features-search': 'Smart Search',
+    'features-search-desc': 'Precisely filter GitHub Issues by language, labels, Stars, and update time. No more aimless browsing.',
+    'features-filter': 'Auto Filter',
+    'features-filter-desc': 'Automatically exclude closed, assigned, PR-linked issues and archived repos. Only show tasks ready for contribution.',
+    'features-score': 'Intelligent Scoring',
+    'features-score-desc': 'Evaluate project activity, issue freshness, discussion volume, and beginner-friendly labels to provide contribution recommendations.',
+    'features-output': 'Multi-format Output',
+    'features-output-desc': 'Supports Table, Markdown, and JSON output formats for easy integration into notes, documentation, or automation workflows.',
+    'features-zero': 'Zero Dependencies',
+    'features-zero-desc': 'Built on Python standard library. No third-party packages required. Ready to use out of the box.',
+    'features-preset': 'Developer Presets',
+    'features-preset-desc': 'Three preset modes available: junior, intermediate, and senior. Tailored for developers at different experience levels.',
+    'demo-title': 'Example Output',
+    'demo-desc': 'Here is the result of running',
+    'scoring-title': 'Scoring Rules',
+    'scoring-desc': 'Each issue starts with a base score of 50. Scoring considers project activity, issue freshness, and multiple other dimensions. Four preset modes available: default, junior, intermediate, and senior.',
+    'scoring-bonus': 'Bonus Factors',
+    'scoring-penalty': 'Penalty Factors',
+    'scoring-bonus-1': 'Repository has issue activity in the last 3 days',
+    'scoring-bonus-2': 'Issue updated today / Repository active this week',
+    'scoring-bonus-3': 'Comment count ≤ 1, low discussion, easy to contribute',
+    'scoring-bonus-4': 'Repository Stars in 5k~50k active range',
+    'scoring-bonus-5': 'Has good first issue / help wanted label',
+    'scoring-penalty-1': 'No issue activity in the last 30 days',
+    'scoring-penalty-2': 'Issue activity stalled 2~4 weeks ago',
+    'scoring-penalty-3': 'Issue not updated in over 30 days',
+    'scoring-penalty-4': 'Comment count ≥ 5, long discussion thread',
+    'scoring-penalty-5': 'Repository Stars > 50k, high competition',
+    'scoring-junior': 'junior',
+    'scoring-junior-desc': 'Beginner-friendly preset. Prefers small repos, low discussion volume, and issues with good first issue labels.',
+    'scoring-intermediate': 'intermediate',
+    'scoring-intermediate-desc': 'Intermediate developer preset. Suitable for contributors with some experience. Focuses on bug and enhancement tasks.',
+    'scoring-senior': 'senior',
+    'scoring-senior-desc': 'Senior developer preset. Prefers large projects and complex tasks with lower activity requirements.',
+    'usage-title': 'Quick Start',
+    'usage-desc': 'Requires Python 3.10+. No third-party dependencies. Set GitHub Token for higher API rate limit (5000 requests/hour).',
+    'usage-comment-1': '# Basic search: Find beginner-friendly Python issues',
+    'usage-comment-2': '# Filter by label, limit results',
+    'usage-comment-3': '# Use preset: junior / intermediate / senior / default',
+    'usage-comment-4': '# High bar filter: Stars 500+, active in last 7 days',
+    'usage-comment-5': '# JSON output for programmatic processing',
+    'usage-comment-6': '# Set Token for higher rate limit (Windows PowerShell)',
+    'search-placeholder': 'Search GitHub Issues... e.g., python good first issue',
+    'search-settings': 'Search Settings',
+    'search-language': 'Language',
+    'search-label': 'Labels',
+    'search-stars': 'Min Stars',
+    'search-limit': 'Results Limit',
+    'search-preset': 'Developer Preset',
+    'search-days': 'Updated Days',
+    'search-token': 'GitHub Token (Optional)',
+    'search-button': 'Search',
+    'results-count': '{count} results found',
+    'loading-text': 'Searching GitHub Issues',
+    'error-connect': 'Failed to connect to server, please ensure backend service is running',
+    'footer-text': 'Made with ❤️ for open source contributors'
+  }
+};
+
+function setLanguage(lang) {
+  currentLang = lang;
+  
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (translations[lang][key]) {
+      if (key === 'hero-title') {
+        el.innerHTML = translations[lang][key];
+      } else {
+        el.textContent = translations[lang][key];
+      }
+    }
+  });
+  
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (translations[lang][key]) {
+      el.placeholder = translations[lang][key];
+    }
+  });
+  
+  document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(`lang-${lang}`).classList.add('active');
+  
+  document.documentElement.lang = lang;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('lang-zh').addEventListener('click', () => setLanguage('zh'));
+  document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
+  
+  const quickStartBtn = document.querySelector('a.btn-primary');
+  if (quickStartBtn) {
+    quickStartBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelector('.search-bar-section').scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsContent = document.getElementById('settings-content');
+  const settingsIcon = settingsToggle.querySelector('.settings-icon');
+  settingsToggle.addEventListener('click', function() {
+    const isHidden = settingsContent.style.display === 'none';
+    settingsContent.style.display = isHidden ? 'block' : 'none';
+    settingsIcon.classList.toggle('expanded', isHidden);
+  });
+
+  const tokenToggle = document.getElementById('token-toggle');
+  const tokenInput = document.getElementById('search-token');
+  tokenToggle.addEventListener('click', function() {
+    const isPassword = tokenInput.type === 'password';
+    tokenInput.type = isPassword ? 'text' : 'password';
+    const iconSvg = tokenToggle.querySelector('svg');
+    if (isPassword) {
+      iconSvg.innerHTML = '<path d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 0 1 1.563-3.029m5.858.908a3 3 0 1 1 4.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0 1 12 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 0 1-4.132 5.411m0 0L21 21"/>';
+    } else {
+      iconSvg.innerHTML = '<path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+    }
+  });
+
+  function formatStars(stars) {
+    if (stars >= 1000) {
+      return (stars / 1000).toFixed(1) + 'k';
+    }
+    return stars.toString();
+  }
+
+  function getScoreClass(score) {
+    if (score >= 85) return 'score-high';
+    if (score >= 60) return 'score-mid';
+    return 'score-mid';
+  }
+
+  function getLabelClass(label) {
+    const lowerLabel = label.toLowerCase();
+    if (lowerLabel.includes('good first') || lowerLabel.includes('beginner')) return 'green';
+    if (lowerLabel.includes('help wanted') || lowerLabel.includes('contribution')) return 'blue';
+    if (lowerLabel.includes('bug')) return 'red';
+    if (lowerLabel.includes('enhancement') || lowerLabel.includes('feature')) return 'purple';
+    if (lowerLabel.includes('documentation') || lowerLabel.includes('docs')) return 'blue';
+    return 'purple';
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function renderResults(results) {
+    const resultsBody = document.getElementById('search-results-body');
+    const resultsWrapper = document.getElementById('search-results-wrapper');
+    const resultsCount = document.getElementById('results-count');
+    
+    if (!results || results.length === 0) {
+      resultsWrapper.style.display = 'none';
+      return;
+    }
+
+    resultsCount.textContent = translations[currentLang]['results-count'].replace('{count}', results.length);
+    
+    const rowsHtml = results.map(issue => {
+      const escapedRepo = escapeHtml(issue.repo || '');
+      const escapedTitle = escapeHtml(issue.title || '');
+      const escapedUrl = escapeHtml(issue.url || '');
+      
+      const labelsHtml = (issue.labels || []).map(label => {
+        const escapedLabel = escapeHtml(label);
+        return `<span class="label-tag ${getLabelClass(label)}">${escapedLabel}</span>`;
+      }).join('');
+      
+      const reasonsHtml = (issue.reasons || []).map(r => {
+        const escapedReason = escapeHtml(r);
+        return `<span class="reasons-badge">${escapedReason}</span>`;
+      }).join('');
+      
+      const warningsHtml = (issue.warnings || []).map(w => {
+        const escapedWarning = escapeHtml(w);
+        return `<span class="warnings-badge">${escapedWarning}</span>`;
+      }).join('');
+      
+      return `
+        <tr>
+          <td><span class="score-badge ${getScoreClass(issue.score)}">${issue.score}</span></td>
+          <td><a class="repo-link" href="https://github.com/${escapedRepo}" target="_blank" rel="noopener noreferrer">${escapedRepo}</a></td>
+          <td><a class="issue-link" href="${escapedUrl}" target="_blank" rel="noopener noreferrer">${escapedTitle}</a></td>
+          <td>${labelsHtml}</td>
+          <td style="color:var(--text-muted)">${issue.stars && issue.stars > 0 ? '&#9733; ' + formatStars(issue.stars) : ''}</td>
+          <td>${reasonsHtml}${warningsHtml}</td>
+        </tr>
+      `;
+    }).join('');
+
+    resultsBody.innerHTML = rowsHtml;
+    resultsWrapper.style.display = 'block';
+    
+    setTimeout(() => {
+      resultsWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  function generateMockResults() {
+    return [
+      {
+        repo: 'psf/requests',
+        title: 'Improve timeout error messages for connection pooling',
+        url: 'https://github.com/psf/requests/issues/1234',
+        labels: ['good first issue', 'documentation'],
+        stars: 52400,
+        score: 95,
+        reasons: ['issue updated today', 'repo issue activity in the last 3 days', 'low discussion volume'],
+        warnings: []
+      },
+      {
+        repo: 'pallets/flask',
+        title: 'Add type annotations to flask.cli module',
+        url: 'https://github.com/pallets/flask/issues/5678',
+        labels: ['good first issue', 'enhancement'],
+        stars: 67800,
+        score: 88,
+        reasons: ['issue updated in the last 3 days', 'repo issue activity this week'],
+        warnings: ['long discussion']
+      },
+      {
+        repo: 'fastapi/fastapi',
+        title: 'Refactor test client to use httpx directly',
+        url: 'https://github.com/fastapi/fastapi/issues/9012',
+        labels: ['good first issue'],
+        stars: 78100,
+        score: 76,
+        reasons: ['moderately active repo'],
+        warnings: []
+      },
+      {
+        repo: 'tiangolo/sqlmodel',
+        title: 'Support composite primary keys for relationship()',
+        url: 'https://github.com/tiangolo/sqlmodel/issues/456',
+        labels: ['good first issue', 'help wanted'],
+        stars: 13500,
+        score: 72,
+        reasons: ['welcoming label'],
+        warnings: []
+      },
+      {
+        repo: 'numpy/numpy',
+        title: 'Add examples to numpy.einsum docstring',
+        url: 'https://github.com/numpy/numpy/issues/23456',
+        labels: ['good first issue'],
+        stars: 28600,
+        score: 68,
+        reasons: ['active repo'],
+        warnings: []
+      }
+    ];
+  }
+
+  async function performSearch() {
+    const query = document.getElementById('search-query').value;
+    const language = document.getElementById('search-language').value;
+    const label = document.getElementById('search-label').value;
+    const starsMin = document.getElementById('search-stars-min').value;
+    const limit = document.getElementById('search-limit').value;
+    const preset = document.getElementById('search-preset').value;
+    const updatedDays = document.getElementById('search-updated-days').value;
+    const token = document.getElementById('search-token').value;
+
+    const searchSubmit = document.getElementById('search-submit');
+    const resultsWrapper = document.getElementById('search-results-wrapper');
+    const resultsBody = document.getElementById('search-results-body');
+
+    searchSubmit.disabled = true;
+    searchSubmit.classList.add('loading');
+    resultsWrapper.style.display = 'block';
+    
+    resultsBody.innerHTML = `
+      <tr><td colspan="6">
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">
+            <span>${translations[currentLang]['loading-text']}</span>
+            <span class="loading-dots">
+              <span class="loading-dot"></span>
+              <span class="loading-dot"></span>
+              <span class="loading-dot"></span>
+            </span>
+          </div>
+        </div>
+      </td></tr>
+    `;
+
+    try {
+      const url = new URL('http://localhost:5000/api/search');
+      url.searchParams.set('query', query || '');
+      url.searchParams.set('language', language || '');
+      url.searchParams.set('label', label || '');
+      url.searchParams.set('stars_min', starsMin || '100');
+      url.searchParams.set('limit', limit || '5');
+      url.searchParams.set('preset', preset || 'default');
+      url.searchParams.set('updated_days', updatedDays || '');
+
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url.toString(), { headers });
+      const data = await response.json();
+
+      if (data.error) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'results-error';
+        errorDiv.textContent = data.error;
+        resultsBody.innerHTML = `<tr><td colspan="6"></td></tr>`;
+        resultsBody.querySelector('td').appendChild(errorDiv);
+        searchSubmit.disabled = false;
+        searchSubmit.classList.remove('loading');
+        return;
+      }
+
+      renderResults(data.issues || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'results-error';
+      errorDiv.textContent = translations[currentLang]['error-connect'];
+      resultsBody.innerHTML = `<tr><td colspan="6"></td></tr>`;
+      resultsBody.querySelector('td').appendChild(errorDiv);
+    } finally {
+      searchSubmit.disabled = false;
+      searchSubmit.classList.remove('loading');
+    }
+  }
+
+  const searchSubmit = document.getElementById('search-submit');
+  const searchInput = document.getElementById('search-query');
+
+  searchSubmit.addEventListener('click', performSearch);
+
+  searchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      performSearch();
+    }
+  });
+});
+</script>
+
+</body>
+</html>

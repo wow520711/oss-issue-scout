@@ -78,6 +78,7 @@ def _search_recommended(args: argparse.Namespace) -> list[ScoredIssue]:
 
     for candidate_limit in candidate_limits:
         search_result = search_issue_candidates(
+            query=args.query,
             language=args.language,
             stars_min=args.stars_min,
             label=args.label,

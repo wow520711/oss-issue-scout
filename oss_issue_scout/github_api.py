@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -22,6 +23,7 @@ from .config import (
     GITHUB_API_VERSION,
     GITHUB_GRAPHQL_URL,
     GITHUB_TOKEN,
+    GITHUB_TOKEN_ENV,
     MAX_GRAPHQL_PAGE_SIZE,
     MAX_GRAPHQL_SEARCH_PAGES,
     MAX_REPO_WORKERS,
@@ -130,6 +132,7 @@ def search_issues(
 
 def search_issue_candidates(
     *,
+    query: str | None = None,
     language: str | None = None,
     stars_min: int | None = None,
     label: str | None = None,
@@ -137,9 +140,10 @@ def search_issue_candidates(
     repo_updated_days: int | None = None,
     limit: int = 10,
 ) -> IssueSearchResult:
-    if GITHUB_TOKEN:
+    if _get_token():
         try:
             return _search_issue_candidates_graphql(
+                query=query,
                 language=language,
                 stars_min=stars_min,
                 label=label,
@@ -153,6 +157,7 @@ def search_issue_candidates(
             _debug("graphql resource limit exceeded; falling back to REST search")
 
     return _search_issue_candidates_rest(
+        query=query,
         language=language,
         stars_min=stars_min,
         label=label,
@@ -239,6 +244,7 @@ def backfill_issue_candidates(
 
 def _search_issue_candidates_graphql(
     *,
+    query: str | None = None,
     language: str | None = None,
     stars_min: int | None = None,
     label: str | None = None,
@@ -250,7 +256,8 @@ def _search_issue_candidates_graphql(
         return IssueSearchResult(issues=[], exhausted=True)
 
     effective_stars_min = max(stars_min or DEFAULT_STARS_MIN, DEFAULT_STARS_MIN)
-    query = _build_issue_query(
+    search_query = _build_issue_query(
+        query=query,
         language=language,
         stars_min=effective_stars_min,
         label=label,
@@ -265,7 +272,7 @@ def _search_issue_candidates_graphql(
     search_started = perf_counter()
     max_pages = MAX_GRAPHQL_SEARCH_PAGES
     _debug(
-        f"graphql search start query={query!r} limit={limit} "
+        f"graphql search start query={search_query!r} limit={limit} "
         f"page_size={page_size} max_pages={max_pages}"
     )
 
@@ -275,7 +282,7 @@ def _search_issue_candidates_graphql(
         data = _request_graphql(
             ISSUE_SEARCH_QUERY,
             {
-                "query": query,
+                "query": search_query,
                 "first": page_size,
                 "after": cursor,
             },
@@ -384,6 +391,7 @@ def _issue_from_graphql_node(node: Any) -> Issue | None:
 
 def _search_issue_candidates_rest(
     *,
+    query: str | None = None,
     language: str | None = None,
     stars_min: int | None = None,
     label: str | None = None,
@@ -395,7 +403,8 @@ def _search_issue_candidates_rest(
         return IssueSearchResult(issues=[], exhausted=True)
 
     effective_stars_min = max(stars_min or DEFAULT_STARS_MIN, DEFAULT_STARS_MIN)
-    query = _build_issue_query(
+    search_query = _build_issue_query(
+        query=query,
         language=language,
         stars_min=effective_stars_min,
         label=label,
@@ -737,6 +746,7 @@ def _load_repo_supplements(
 
 def _build_issue_query(
     *,
+    query: str | None = None,
     language: str | None,
     stars_min: int | None,
     label: str | None,
@@ -744,6 +754,8 @@ def _build_issue_query(
     sort_updated_desc: bool = False,
 ) -> str:
     parts = ["is:issue", "is:open", "archived:false", "-linked:pr", "no:assignee"]
+    if query:
+        parts.append(_quote_query_value(query))
     if language:
         parts.append(f"language:{_quote_query_value(language)}")
     if stars_min is not None:
@@ -782,8 +794,11 @@ def _build_repo_issue_query(
     return " ".join(parts)
 
 
+def _get_token() -> str | None:
+    return os.environ.get(GITHUB_TOKEN_ENV)
+
 def _request_graphql(query: str, variables: dict[str, Any]) -> dict[str, Any]:
-    token = GITHUB_TOKEN
+    token = _get_token()
     if not token:
         raise GitHubAPIError(
             "GitHub GraphQL API requires authentication. Set a GITHUB_TOKEN "
@@ -864,7 +879,7 @@ def _request_json(path: str, params: dict[str, str] | None = None) -> dict[str, 
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
         "User-Agent": "oss-issue-scout",
     }
-    token = GITHUB_TOKEN
+    token = _get_token()
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
