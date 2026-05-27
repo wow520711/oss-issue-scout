@@ -34,6 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     search_parser = subparsers.add_parser("search", help="search GitHub issues")
     search_parser.add_argument("--language")
+    search_parser.add_argument("--query")
     search_parser.add_argument("--stars-min", type=int)
     search_parser.add_argument("--label")
     search_parser.add_argument("--updated-days", type=int)

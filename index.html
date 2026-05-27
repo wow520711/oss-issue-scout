@@ -1077,8 +1077,8 @@
 <section id="demo">
   <div class="container">
     <p class="section-label reveal">Demo</p>
-    <h2 class="section-title reveal" style="transition-delay: 0.05s">示例输出</h2>
-    <p class="section-desc reveal" style="transition-delay: 0.1s">以下是运行 <code style="font-family:var(--font-mono);font-size:0.85rem;color:var(--accent);background:var(--accent-dim);padding:1px 6px;border-radius:3px;">oss-issue-scout search --language python --label "good first issue"</code> 的模拟结果。</p>
+    <h2 class="section-title reveal" style="transition-delay: 0.05s" data-i18n="demo-title">示例输出</h2>
+    <p class="section-desc reveal" style="transition-delay: 0.1s" data-i18n="demo-desc">以下是运行 <code style="font-family:var(--font-mono);font-size:0.85rem;color:var(--accent);background:var(--accent-dim);padding:1px 6px;border-radius:3px;">oss-issue-scout search --language python --label "good first issue"</code> 的模拟结果。</p>
 
     <div class="demo reveal" style="transition-delay: 0.15s">
       <div class="demo-header">
@@ -1464,6 +1464,10 @@ function setLanguage(lang) {
     if (translations[lang][key]) {
       if (key === 'hero-title') {
         el.innerHTML = translations[lang][key];
+      } else if (key === 'demo-desc') {
+        const codeEl = el.querySelector('code');
+        const codeHtml = codeEl ? codeEl.outerHTML : '';
+        el.innerHTML = translations[lang][key] + ' ' + codeHtml + ' ' + (lang === 'zh' ? '的模拟结果。' : 'simulation result.');
       } else {
         el.textContent = translations[lang][key];
       }
@@ -1654,14 +1658,33 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function performSearch() {
-    const query = document.getElementById('search-query').value;
-    const language = document.getElementById('search-language').value;
+    const languagesList = ['python', 'java', 'javascript', 'typescript', 'rust', 'c', 'c++', 'go', 'ruby', 'php', 'swift', 'kotlin', 'dart', 'scala', 'html', 'css', 'sql', 'bash', 'shell', 'perl'];
+    
+    let query = document.getElementById('search-query').value;
+    let language = document.getElementById('search-language').value;
     const label = document.getElementById('search-label').value;
     const starsMin = document.getElementById('search-stars-min').value;
     const limit = document.getElementById('search-limit').value;
     const preset = document.getElementById('search-preset').value;
     const updatedDays = document.getElementById('search-updated-days').value;
     const token = document.getElementById('search-token').value;
+
+    const lowerQuery = query.toLowerCase().trim();
+    for (const lang of languagesList) {
+        if (lowerQuery === lang) {
+            language = lang;
+            query = '';
+            document.getElementById('search-language').value = lang;
+            document.getElementById('search-query').value = '';
+            break;
+        } else if (lowerQuery.startsWith(lang + ' ')) {
+            language = lang;
+            query = query.substring(lang.length + 1).trim();
+            document.getElementById('search-language').value = lang;
+            document.getElementById('search-query').value = query;
+            break;
+        }
+    }
 
     const searchSubmit = document.getElementById('search-submit');
     const resultsWrapper = document.getElementById('search-results-wrapper');
